@@ -1,3 +1,8 @@
+const platformCount = 6;
+const doodlerShopX = [30 * 2, 30 * 5.3, 30 * 8.5];
+const doodlerShopY = 120;
+
+let displayWelcomeMessage = true;
 let canvas, ctx;
 let doodler;
 let platforms = [];
@@ -6,7 +11,6 @@ let coins = [];
 let score = 0;
 let scoreBest = 0;
 let coinsCollected = 0;
-const platformCount = 6;
 let highestPlatformY = 0;
 let gameOver = false;
 let doodlerSelectedImage = 0;
@@ -17,18 +21,15 @@ let clickY = 0;
 let doodlerWidth = 50;
 let doodlerHeight = 50;
 
-let doodlerImageLeft = new Image(); 
-let doodlerImageRight = new Image(); 
+let logoImage = new Image(); 
+let doodlerImage = new Image(); 
+let doodler2Image = new Image(); 
+let doodler3Image = new Image(); 
+let doodler4Image = new Image(); 
 let platformImageNormal = new Image(); 
+let platformImageMoving = new Image(); 
 let platformImageBreakable = new Image(); 
 let coinImage = new Image(); 
-
-let doodler2ImageLeft = new Image(); 
-let doodler2ImageRight = new Image(); 
-let doodler3ImageLeft = new Image(); 
-let doodler3ImageRight = new Image(); 
-let doodler4ImageLeft = new Image(); 
-let doodler4ImageRight = new Image(); 
 
 function init() {
     canvas = document.getElementById('board');
@@ -36,30 +37,28 @@ function init() {
     canvas.height = 640;
     ctx = canvas.getContext('2d');
 
-    doodlerImageLeft.src = 'doodler1-left.png'; 
-    doodlerImageRight.src = 'doodler1-right.png'; 
-    platformImageNormal.src = 'platform.png';
-    platformImageBreakable.src = 'platform-broken.png'; 
-    coinImage.src = 'coin.png';
+    logoImage.src = 'images/logo.png'; 
+    doodlerImage.src = 'images/doodler1.png'; 
+    doodler2Image.src = 'images/doodler2.png'; 
+	doodler3Image.src = 'images/doodler3.png'; 
+	doodler4Image.src = 'images/doodler4.png'; 
+    platformImageNormal.src = 'images/platform.png';
+    platformImageMoving.src = 'images/platform-moving.png';
+    platformImageBreakable.src = 'images/platform-broken.png'; 
+    coinImage.src = 'images/coin.png';
  	
-	doodler2ImageLeft.src = 'doodler2-left.png'; 
-    doodler2ImageRight.src = 'doodler2-right.png'; 
-	doodler3ImageLeft.src = 'doodler3-left.png'; 
-    doodler3ImageRight.src = 'doodler3-right.png'; 
-	doodler4ImageLeft.src = 'doodler4-left.png'; 
-    doodler4ImageRight.src = 'doodler4-right.png'; 
-
     doodler = new Doodler(canvas.width / 2 - doodlerWidth  / 2, canvas.height - 100); 
+    
     
     generatePlatforms();
     requestAnimationFrame(update);
     generateNewPlatforms();
-
- canvas.addEventListener('click', function(event) {
+    
+    canvas.addEventListener('click', function(event) {
     clickX = event.offsetX;
     clickY = event.offsetY;
-    
-selectDoodler();
+        
+    selectDoodler();
   });
 }
 
@@ -72,7 +71,7 @@ class Doodler {
         this.velocityY = 0;
         this.jumpForce = 7;
         this.isJumping = true;
-	this.lookingDirection = 0;
+	    this.lookingDirection = 0;
     }
 
     jump() {
@@ -86,25 +85,25 @@ class Doodler {
     }
 
     render() {
-	let leftImage = doodlerImageLeft;
-	let rightImage = doodlerImageRight;
+	let img = doodlerImage;
 
 	if(doodlerSelectedImage == 1){
-		leftImage = doodler2ImageLeft;
-		rightImage = doodler2ImageRight;
+		img = doodler2Image;
 	} else if(doodlerSelectedImage == 2){
-		leftImage = doodler3ImageLeft;
-		rightImage = doodler3ImageRight;
+		img = doodler3Image;
 	} if(doodlerSelectedImage == 3){
-		leftImage = doodler4ImageLeft;
-		rightImage = doodler4ImageRight;
+		img = doodler4Image;
 	} 
-
-	if(this.lookingDirection == 0) {
-		ctx.drawImage(leftImage, this.x, this.y, this.width, this.height);
-	} else {
-		ctx.drawImage(rightImage, this.x, this.y, this.width, this.height);
-	}
+    
+	if (this.lookingDirection == 0) {
+        ctx.drawImage(img, this.x, this.y, this.width, this.height);  
+    } else {
+        ctx.save();
+        ctx.translate(this.x + this.width, this.y); 
+        ctx.scale(-1, 1);
+        ctx.drawImage(img, 0, 0, this.width, this.height);
+        ctx.restore();
+    }
         
     }
 
@@ -132,10 +131,12 @@ this.speed = 88;
     }
 
     render() {
-        if (this.type === 0 || this.type === 2) {
+        if (this.type === 0) {
             ctx.drawImage(platformImageNormal, this.x, this.y, this.width, this.height);
         } else if (this.type === 1) {
             ctx.drawImage(platformImageBreakable, this.x, this.y, this.width, this.height);
+        } else if (this.type === 2) {
+            ctx.drawImage(platformImageMoving, this.x, this.y, this.width, this.height);
         } 
     }
 
@@ -209,18 +210,16 @@ function generateNewPlatforms() {
         if (isBreakable) {
             breakablePlatforms.push(new Platform(Math.random() * (canvas.width - 80), (newPlatformY - step * i) -20, 1)); 
         } 
-	let platformX = Math.random() * (canvas.width - 80);
+	let platformX = Math.random() * (canvas.width /2 + 90) ;
         if (isMoving) {
             platforms.push(new Platform(platformX , (newPlatformY - step  * i), 2));
         } else {
-        if (Math.random() < 0.15) { 
+        if (score > 2 && Math.random() < 0.15) { 
             const coinX = platformX + 28; 
             coins.push(new Coin(coinX, newPlatformY - step * i - 35));  
         }
             platforms.push(new Platform(platformX , (newPlatformY - step * i), 0));
         }
-
-
 
         if (i === platformCount - 1) {
             highestPlatformY = newPlatformY - step * i;
@@ -283,11 +282,11 @@ function movePlatformsDown(amount) {
     });
 }
 
-let leftPressed = false;
+let Pressed = false;
 let rightPressed = false;
 
 function handleInput() {
-    if (leftPressed) {
+    if (Pressed) {
         doodler.x -= 3;
         if (doodler.x < 0) doodler.x = 0;
 	doodler.lookingDirection = 0;
@@ -301,8 +300,13 @@ function handleInput() {
 }
 
 document.addEventListener('keydown', (event) => {
+    if(displayWelcomeMessage ===true) {
+        restartGame();
+    }
+    displayWelcomeMessage = false;
+
     if (event.key === 'ArrowLeft') {
-        leftPressed = true;
+        Pressed = true;
     } else if (event.key === 'ArrowRight') {
         rightPressed = true;
     }
@@ -310,67 +314,90 @@ document.addEventListener('keydown', (event) => {
 
 document.addEventListener('keyup', (event) => {
     if (event.key === 'ArrowLeft') {
-        leftPressed = false;
+        Pressed = false;
     } else if (event.key === 'ArrowRight') {
         rightPressed = false;
     }
 });
-function selectDoodler(){
 
-if(!gameOver){return;}
+function selectDoodler() {
 
-if(clickX >doodler2ShopX && clickX <doodler2ShopX + doodlerWidth
-	&& clickY >doodlerShopY && clickY <doodlerShopY + doodlerHeight)
-{
-if(coinsCollected >= 1 && !doodlerCollected.includes(1)) {
-	coinsCollected -= 1;
-ctx.clearRect(0, 0, canvas.width, canvas.height);
-	displayGameOver();
-	doodlerSelectedImage = 1;
-doodlerCollected.push(1);
+    if (!gameOver) {
+        return;
+    }
 
-}	
+    if (clickX > doodlerShopX[0] && clickX < doodlerShopX[0] + doodlerWidth &&
+        clickY > doodlerShopY && clickY < doodlerShopY + doodlerHeight) {
+
+            if(doodlerCollected.includes(1)){
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                doodlerSelectedImage = 1;
+                displayGameOver();
+                return;
+            }
+
+        if (coinsCollected >= 1) {
+            coinsCollected -= 1;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            doodlerSelectedImage = 1;
+            doodlerCollected.push(1);
+            displayGameOver();
+
+
+            
+        }
+    }
+
+    if (clickX > doodlerShopX[1] && clickX < doodlerShopX[1] + doodlerWidth &&
+        clickY > doodlerShopY && clickY < doodlerShopY + doodlerHeight) {
+
+            if(doodlerCollected.includes(2)){
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                doodlerSelectedImage = 2;
+                displayGameOver();
+                return;
+            }
+
+
+        if (coinsCollected >= 3) {
+            coinsCollected -= 3;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            doodlerSelectedImage = 2;
+            doodlerCollected.push(2);
+            displayGameOver();
+        }
+    }
+
+    if (clickX > doodlerShopX[2] && clickX < doodlerShopX[2] + doodlerWidth &&
+        clickY > doodlerShopY && clickY < doodlerShopY + doodlerHeight) {
+
+            if(doodlerCollected.includes(3)){
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                doodlerSelectedImage = 3;
+                displayGameOver();
+                return;
+            }
+
+        if (coinsCollected >= 10) {
+            coinsCollected -= 10;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            doodlerSelectedImage = 3;
+            doodlerCollected.push(3);
+            displayGameOver();
+        }
+    }
+
 }
 
-if(clickX >doodler3ShopX && clickX <doodler3ShopX + doodlerWidth
-	&& clickY >doodlerShopY && clickY <doodlerShopY + doodlerHeight)
-{
-if(coinsCollected >= 3  && !doodlerCollected.includes(2)) {
-	coinsCollected -= 3;
-ctx.clearRect(0, 0, canvas.width, canvas.height);
-	displayGameOver();
-	doodlerSelectedImage = 2;
-doodlerCollected.push(2);
-}	
-}
-
-if(clickX >doodler4ShopX && clickX <doodler4ShopX + doodlerWidth
-	&& clickY >doodlerShopY && clickY <doodlerShopY + doodlerHeight)
-{
-if(coinsCollected >= 10 && !doodlerCollected.includes(3)) {
-	coinsCollected -= 10;
-ctx.clearRect(0, 0, canvas.width, canvas.height);
-	displayGameOver();
-	doodlerSelectedImage = 3;
-doodlerCollected.push(3);
-}	
-}
-
-}
-
-const doodler2ShopX = 30 * 2;
-const doodler3ShopX = 30 * 5.3;
-const doodler4ShopX = 30 * 8.5;
-const doodlerShopY = 120;
 
 function displayShop(){
-ctx.drawImage(doodler2ImageRight, doodler2ShopX, doodlerShopY , doodlerWidth, doodlerHeight);
-ctx.drawImage(doodler3ImageRight, doodler3ShopX, doodlerShopY , doodlerWidth, doodlerHeight);
-ctx.drawImage(doodler4ImageRight, doodler4ShopX, doodlerShopY , doodlerWidth, doodlerHeight);
+ctx.drawImage(doodler2Image, doodlerShopX[0], doodlerShopY , doodlerWidth, doodlerHeight);
+ctx.drawImage(doodler3Image, doodlerShopX[1], doodlerShopY , doodlerWidth, doodlerHeight);
+ctx.drawImage(doodler4Image, doodlerShopX[2], doodlerShopY , doodlerWidth, doodlerHeight);
 
  ctx.fillStyle = 'black';
+ ctx.font = '20px Comic Sans MS';
 
-ctx.font = '20px Arial';
     const priceText = `1🌕`;
     ctx.fillText(priceText, 30 * 2, 200);
 
@@ -380,14 +407,15 @@ const priceText2 = `3🌕`;
 const priceText3 = `10🌕`;
     ctx.fillText(priceText3, 30 * 8.5, 200);
 
+    ctx.font = '28px Comic Sans MS';
+    const topScoreText = `Top Score: ${scoreBest}`;
+    const topScoreTextWidth = ctx.measureText(topScoreText ).width;
+    ctx.fillText(topScoreText  , (canvas.width - topScoreTextWidth  ) / 2, 38);
 
+    ctx.font = '20px Comic Sans MS';
     const coinsText = `Coins: ${coinsCollected}`;
     const coinTextWidth = ctx.measureText(coinsText ).width;
-    ctx.fillText(coinsText , (canvas.width - coinTextWidth ) / 2, 60);
-
-const topScoreText = `Top Score: ${scoreBest}`;
-    const topScoreTextWidth = ctx.measureText(topScoreText ).width;
-    ctx.fillText(topScoreText  , (canvas.width - topScoreTextWidth  ) / 2, 30);
+    ctx.fillText(coinsText , (canvas.width - coinTextWidth ) / 2, 80);
 
 }
 
@@ -396,28 +424,44 @@ if(score > scoreBest) {
 scoreBest = score;
 }
 
+
+ctx.font = '20px Comic Sans MS';
+if(doodlerSelectedImage === 0){
+} else if (doodlerSelectedImage === 1){
+    ctx.fillText(`v`, doodlerShopX[0]+ 20, doodlerShopY - 12);
+} else if (doodlerSelectedImage === 2){
+    ctx.fillText(`v`, doodlerShopX[1]+ 20, doodlerShopY - 12);
+} else if (doodlerSelectedImage === 3){
+    ctx.fillText(`v`, doodlerShopX[2]+ 20, doodlerShopY - 12);
+}
+
+
   displayShop()	
 
+
+
+  ctx.font = '20px Arial';
     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
     ctx.fillRect(0, canvas.height / 2 - 30, canvas.width, 100); 
     ctx.fillStyle = 'white';
-    ctx.font = '30px Arial';
-    ctx.fillText('Game Over', canvas.width / 2 - 80, canvas.height / 2);
-    
-    ctx.font = '20px Arial';
-    const scoreText = `Score: ${score}`;
+    ctx.fillText('Game Over', canvas.width / 2 - 60, canvas.height / 2 + 10);
+    ctx.fillText('Press R to Restart', canvas.width / 2 - 90, canvas.height / 2 + 40);
+
+    ctx.save(); 
+    ctx.rotate((Math.PI / 180) * 30); 
+    ctx.drawImage(doodlerImage, canvas.width / 2 + 200, 300, 300, 300); 
+    ctx.restore(); 
+
+    ctx.fillStyle = 'black';
+    ctx.font = '83px Comic Sans MS';
+    const scoreText = `${score}`;
     const textWidth = ctx.measureText(scoreText).width;
-    ctx.fillText(scoreText, (canvas.width - textWidth) / 2, canvas.height / 2 + 30);
+    ctx.fillText(scoreText, (canvas.width - textWidth) / 2 - 120, canvas.height / 2 + 223);
 
-
-
-
-    ctx.fillText('Press R to Restart', canvas.width / 2 - 90, canvas.height / 2 + 60);
+    
 }
 
 function restartGame() {
-
-
     gameOver = false;
     score = 0;
     platforms = [];
@@ -428,6 +472,17 @@ function restartGame() {
     doodler.x = canvas.width / 2 - doodler.width / 2; 
     doodler.velocityY = 0; 
     requestAnimationFrame(update);
+}
+
+function displayStartMessage(){
+    
+
+    ctx.font = '20px Arial';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(0, canvas.height / 2 - 30, canvas.width, 100); 
+    ctx.fillStyle = 'white';
+    ctx.fillText('Welcome!', canvas.width / 2 - 45, canvas.height / 2 + 10);
+    ctx.fillText('Press < or > to Move', canvas.width / 2 - 90, canvas.height / 2 + 40);
 }
 
 document.addEventListener('keydown', (event) => {
@@ -443,6 +498,11 @@ function update(timestamp) {
     lastTime = timestamp;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (displayWelcomeMessage === true) {
+        displayStartMessage();
+        return;
+    }
 
     if (gameOver) {
         displayGameOver();
@@ -476,18 +536,13 @@ function update(timestamp) {
         movePlatformsDown(doodler.jumpForce * deltaTime);  
         doodler.y += doodler.jumpForce * deltaTime; 
     }
-
+    ctx.font = '20px Comic Sans MS';
     ctx.fillStyle = 'black';
-    ctx.font = '20px Arial';
     ctx.fillText(`🏆 ${score}`, 20, 40);
-
-ctx.fillStyle = 'black';
-    ctx.font = '20px Arial';
     ctx.fillText(`${coinsCollected} 🌕`, 300, 40);
 
     requestAnimationFrame(update);  
 }
 
-
-
 window.onload = init;
+
