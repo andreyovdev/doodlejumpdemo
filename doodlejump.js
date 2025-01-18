@@ -75,13 +75,12 @@ class Doodler {
     }
 
     jump() {
-        this.velocityY = -this.jumpForce;
+        this.velocityY = -this.jumpForce ;
         this.isJumping = true;
     }
 
-    applyGravity() {
-        this.velocityY += 0.12;
-        this.y += this.velocityY;
+    applyGravity(deltaTime) {
+        this.velocityY += 22.12 * deltaTime;
     }
 
     render() {
@@ -108,8 +107,8 @@ class Doodler {
     }
 
      update(deltaTime) {
-        this.applyGravity();
-        this.y += this.velocityY * deltaTime; 
+        this.applyGravity(deltaTime);
+        this.y += this.velocityY; 
 
         if (this.y > canvas.height - this.height) {
             this.y = canvas.height - this.height;
